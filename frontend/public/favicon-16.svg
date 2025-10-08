@@ -1,0 +1,12 @@
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="16" height="16" rx="2" fill="#2563EB"/>
+  
+  <!-- Simplified wallet -->
+  <rect x="3" y="5" width="10" height="7" rx="1" fill="white"/>
+  <rect x="3" y="5" width="8" height="2" fill="#E5E7EB"/>
+  
+  <!-- Dollar symbol -->
+  <circle cx="11" cy="9" r="1.5" fill="#2563EB"/>
+  <text x="11" y="10" text-anchor="middle" fill="white" font-size="3" font-weight="bold">$</text>
+</svg>
