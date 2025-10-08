@@ -1,1 +1,76 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*-checkpoint.ipynb
+*.nbconvert.ipynb
+
+# ML Models and Data (uncomment if you don't want to track models)
+# *.pkl
+# *.h5
+# *.model
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# Environment and IDE
+.env
+.vscode/
+.idea/
+*.swp
+*.swo
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
 my_project_venv/
+venv/
+env/
+ENV/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp

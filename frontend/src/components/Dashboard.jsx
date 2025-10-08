@@ -9,8 +9,8 @@ export default function Dashboard() {
   return (
     <div className="grid grid-cols-2 gap-6 mb-6">
       <UploadCard />
-      <ExpenseTable />
       <PieChartCard />
+      <ExpenseTable />
       <LineChartCard />
       <BudgetProgressCard />
     </div>

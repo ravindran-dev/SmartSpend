@@ -1,0 +1,27 @@
+{
+  "accuracy": 0.7520325203252033,
+  "cv_mean": 0.7277252364360379,
+  "cv_std": 0.05390015375150968,
+  "model_type": "Advanced Ensemble (Voting Classifier)",
+  "individual_models": {
+    "logistic_regression": 0.7439024390243902,
+    "random_forest": 0.6991869918699187,
+    "gradient_boosting": 0.7682926829268293,
+    "svm": 0.5528455284552846
+  },
+  "categories": [
+    "Apparel",
+    "Bills & Utilities",
+    "Food & Dining",
+    "Gift",
+    "Healthcare",
+    "Income",
+    "Miscellaneous",
+    "Personal & Family",
+    "Transportation"
+  ],
+  "training_samples": 981,
+  "test_samples": 246,
+  "features_count": 687,
+  "training_date": "2025-10-07T12:02:07.296999"
+}
