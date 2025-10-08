@@ -172,7 +172,7 @@ export default function UploadCard() {
         </div>
         <p className="text-xs text-blue-600 mt-1">
           📅 Today: {getCurrentLocalDate()} | 
-          🤖 AI will automatically use current date for old receipts
+          Receipts without a detected date Model will use today's date by default.
         </p>
       </div>
       
