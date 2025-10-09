@@ -29,13 +29,6 @@ share/python-wheels/
 # *.h5
 # *.model
 
-# Logs and temporary files
-*.log
-*.tmp
-*.temp
-.DS_Store
-Thumbs.db
-
 # Environment and IDE
 .env
 .vscode/
@@ -58,19 +51,11 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# IDEs
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS
+# OS files
 .DS_Store
 Thumbs.db
 
-# Logs
+# Logs and temporary files
 *.log
-
-# Temporary files
 *.tmp
 *.temp

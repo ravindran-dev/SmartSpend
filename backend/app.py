@@ -27,7 +27,7 @@ expense_id_counter = 1
 
 # Configure Tesseract path (update this path based on your installation)
 # For Windows, try these common paths:
-import os
+import fitz  # PyMuPDF
 import platform
 
 if platform.system() == "Windows":
@@ -299,7 +299,9 @@ class BillExtractor:
         
         # Prioritized date patterns - YYYY-MM-DD first for better accuracy
         date_patterns = [
-            r'(\d{4}-\d{2}-\d{2})',  # YYYY-MM-DD format (highest priority)
+            r'(?:invoice\s+date|bill\s+date|date)\s*[:]\s*(\d{2}/\d{2}/\d{4})',  # "Invoice Date : DD/MM/YYYY" (highest priority)
+            r'(?:invoice\s+date|bill\s+date|date)\s*[:]\s*([a-zA-Z]+\s+\d{1,2},?\s+\d{4})',  # "Invoice Date: July 26, 2017" format
+            r'(\d{4}-\d{2}-\d{2})',  # YYYY-MM-DD format
             r'(?:invoice\s+date|bill\s+date|date)[:\s]*(\d{4}-\d{2}-\d{2})',
             r'(?:invoice\s+date|bill\s+date|date)[:\s]*(\d{1,2}[/-]\d{1,2}[/-]\d{4})',
             r'(?:invoice\s+date|bill\s+date|date)[:\s]*(\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{4})',
@@ -310,6 +312,9 @@ class BillExtractor:
             # Add OCR corruption patterns
             r'(\d{2}/\d{2}/\d{4})',  # DD/MM/YYYY or MM/DD/YYYY
             r'(00/\d{2}/\d{4})',     # OCR corruption: 00/MM/YYYY
+            # Add more flexible patterns for various receipt formats
+            r'(\d{1,2}/\d{1,2}/\d{4})',  # D/M/YYYY or DD/MM/YYYY or MM/DD/YYYY
+            r'(\d{1,2}-\d{1,2}-\d{4})',  # D-M-YYYY or DD-MM-YYYY or MM-DD-YYYY
         ]
         
         # Look for date keywords
@@ -335,12 +340,44 @@ class BillExtractor:
                         
                         # Fix common OCR date corruptions
                         if '00/' in cleaned_match:
-                            # Try to fix month 00 to 10 (October is common)
-                            cleaned_match = cleaned_match.replace('00/', '10/')
-                            print(f"📅 Fixed OCR corruption: '{match}' → '{cleaned_match}'")
+                            # If it's 00/MM/YYYY format, assume day is corrupted
+                            if cleaned_match.startswith('00/'):
+                                # Replace 00 with 10 as a reasonable day
+                                cleaned_match = cleaned_match.replace('00/', '10/')
+                                print(f"📅 Fixed OCR day corruption: '{match}' → '{cleaned_match}'")
                         
-                        # Try to parse the date
-                        parsed_date = date_parser.parse(cleaned_match, fuzzy=True)
+                        # Fix year 2028 to 2020 (common OCR error) - DISABLED FOR DEBUGGING
+                        # if '2028' in cleaned_match:
+                        #     cleaned_match = cleaned_match.replace('2028', '2020')
+                        #     print(f"📅 Fixed OCR year corruption: '{match}' → '{cleaned_match}'")
+                        
+                        # Use the cleaned match for parsing
+                        try:
+                            # Handle ambiguous dates like 9/10/2025 (could be Sep 10 or Oct 9)
+                            if re.match(r'^\d{1,2}/\d{1,2}/\d{4}$', cleaned_match):
+                                # Try both interpretations for ambiguous dates
+                                try:
+                                    # Try DD/MM/YYYY first (European/Indian format)
+                                    parsed_date = datetime.strptime(cleaned_match, '%d/%m/%Y')
+                                except ValueError:
+                                    try:
+                                        # Try MM/DD/YYYY (American format)
+                                        parsed_date = datetime.strptime(cleaned_match, '%m/%d/%Y')
+                                    except ValueError:
+                                        # Fallback to fuzzy parsing
+                                        parsed_date = date_parser.parse(cleaned_match, fuzzy=True)
+                            else:
+                                parsed_date = date_parser.parse(cleaned_match, fuzzy=True)
+                        except:
+                            # Fallback to fuzzy parsing
+                            parsed_date = date_parser.parse(cleaned_match, fuzzy=True)
+                        
+                        # Additional year correction for future dates that are likely OCR errors - DISABLED FOR DEBUGGING
+                        # if parsed_date.year > datetime.now().year + 1:
+                        #     # If it's more than 1 year in the future, it's likely an OCR error
+                        #     corrected_year = parsed_date.year - 8  # 2028 -> 2020
+                        #     parsed_date = parsed_date.replace(year=corrected_year)
+                        #     print(f"📅 Corrected future year: {parsed_date.strftime('%Y-%m-%d')}")
                         
                         # Skip dates that are clearly wrong (too far in future or past)
                         current_year = datetime.now().year
@@ -356,8 +393,10 @@ class BillExtractor:
                         # Prefer dates with keywords or recent dates
                         confidence = 2.0 if has_date_keyword else 1.0
                         
-                        # Higher confidence for YYYY-MM-DD format
-                        if i == 0:  # First pattern (YYYY-MM-DD)
+                        # HIGHEST confidence for dates right after "Invoice Date :" 
+                        if i == 0:  # First pattern (Invoice Date : DD/MM/YYYY)
+                            confidence += 3.0
+                        elif i == 1:  # Second pattern (YYYY-MM-DD)
                             confidence += 1.0
                         
                         # Boost confidence for recent dates (within last 10 years)
@@ -386,8 +425,12 @@ class BillExtractor:
         
         if dates:
             best_date = dates[0]
-            # If the best date is too old (more than 1 year), use current date
-            if best_date['parsed_date'].year < datetime.now().year - 1:
+            # Only reject dates that are clearly wrong (future dates or extremely old)
+            current_year = datetime.now().year
+            if best_date['parsed_date'].year > current_year + 1:
+                print(f"📅 Date too far in future ({best_date['date']}), using current date: {current_date}")
+                return current_date
+            elif best_date['parsed_date'].year < 1990:  # Only reject extremely old dates
                 print(f"📅 Date too old ({best_date['date']}), using current date: {current_date}")
                 return current_date
             else:
@@ -487,14 +530,16 @@ class BillExtractor:
                 
             # Check if line contains amount-related keywords with priority
             priority = 0
-            if any(keyword in line_lower for keyword in ['grand total', 'final total', 'payable amount']):
-                priority = 3  # Highest priority
+            if any(keyword in line_lower for keyword in ['invoice amount', 'invoice total']):
+                priority = 5  # HIGHEST priority for invoice amounts
+            elif any(keyword in line_lower for keyword in ['grand total', 'final total', 'payable amount']):
+                priority = 4  # High priority
             elif 'grand' in line_lower and any(char.isdigit() for char in line_clean):
-                priority = 3  # Also highest priority for any "grand" with numbers
+                priority = 4  # Also high priority for any "grand" with numbers
             elif any(keyword in line_lower for keyword in ['net total', 'amount payable']):
-                priority = 2  # Medium priority
+                priority = 3  # Medium priority
             elif any(keyword in line_lower for keyword in ['total', 'amount', 'invoice', 'bill', 'subtotal', 'sum']):
-                priority = 1  # Lower priority
+                priority = 2  # Lower priority
             else:
                 priority = 0  # No keyword context
             
@@ -530,7 +575,7 @@ class BillExtractor:
                         amount_str = str(match).replace(',', '').replace(' ', '')
                     amount = float(amount_str)
                     if 1000 <= amount <= 50000:
-                        confidence = 3  # Highest priority for OCR-fixed amounts
+                        confidence = 2  # Lower priority for OCR-fixed amounts (below Total amounts)
                         amounts.append((amount, confidence, -1, f"OCR Fixed: {match}"))
                         print(f"💰 Found OCR-FIXED amount: {amount} (priority: {confidence}) from '{match}'")
                 except (ValueError, TypeError):
@@ -550,12 +595,13 @@ class BillExtractor:
         
         for pattern, amount_value in text_amount_patterns:
             if re.search(pattern, text, re.IGNORECASE):
-                confidence = 4  # Highest priority for explicit text amounts
+                confidence = 3  # Lower priority than invoice amounts but higher than OCR fixes
                 amounts.append((amount_value, confidence, -1, f"Text amount: {pattern}"))
                 print(f"💰 Found TEXT AMOUNT: {amount_value} (priority: {confidence}) from pattern '{pattern}'")
         
         # SMART PATTERN: Look for amounts near "total", "amount", "rupees" context
         smart_amount_patterns = [
+            (r'(?:invoice\s+amount|invoice\s+total|total\s+amount|grand\s+total|final\s+total)\s*[:\-\s]*([0-9,]{3,}(?:\.[0-9]{2})?)', 'invoice amount/total'),  # Highest priority
             (r'(?:total|amount|rupees|rs\.?|₹)\s*[:\-\s]*([0-9,]{3,}(?:\.[0-9]{2})?)', 'near total/amount'),
             (r'([0-9,]{3,}(?:\.[0-9]{2})?)\s*(?:only|rupees|rs\.?)', 'followed by rupees/only'),
             (r'(?:three|four|five)\s+thousand.*?([0-9,]{3,4})', 'words to number context'),
@@ -570,8 +616,14 @@ class BillExtractor:
                     
                     # Check if this amount is in a bad context (GSTIN, phone, etc.)
                     if not self.is_amount_in_bad_context(text, match):
-                        if 1000 <= amount <= 50000:
-                            confidence = 3  # Highest priority for contextual amounts
+                        if 1000 <= amount <= 100000:  # Increased upper limit for business invoices
+                            # HIGHEST priority for "Invoice Amount" and "Invoice Total"
+                            if context_name == 'invoice amount/total':
+                                confidence = 5  # Highest priority
+                            elif context_name == 'near total/amount':
+                                confidence = 4  # Higher than OCR fixes
+                            else:
+                                confidence = 3  # Same as OCR fixes
                             amounts.append((amount, confidence, -1, f"Smart context ({context_name}): {match}"))
                             print(f"💰 Found SMART amount: {amount} (priority: {confidence}) from {context_name} '{match}'")
                 except (ValueError, TypeError):
@@ -953,7 +1005,7 @@ class BillExtractor:
             'mobile', 'phone', 'smartphone', 'tablet', 'laptop', 'computer', 'pc',
             'headphone', 'earphone', 'speaker', 'charger', 'adapter', 'power adapter',
             'cable', 'usb', 'bluetooth', 'smartwatch', 'tv', 'television', 'monitor',
-            'keyboard', 'mouse', 'webcam', 'camera', 'hard drive', 'ssd', 'ram',
+            'keyboard', 'mouse', 'webcam', 'camera', 'hard drive', 'ssd', 'memory card',
             'processor', 'graphics card', 'motherboard', 'electronics', 'gadget',
             'accessory', 'case', 'cover', 'screen guard', 'tempered glass'
         ]
@@ -1016,6 +1068,10 @@ class BillExtractor:
         
         # Business Services & Industrial (after tools check)
         if any(word in description_lower for word in [
+            # Software & Technology Services
+            'software labs', 'software', 'tech', 'technology', 'it services', 'cloudzen',
+            'development', 'programming', 'coding', 'web services', 'app development',
+            
             # Business Services (not tools)
             'business service', 'office', 'consulting', 'professional service',
             'legal service', 'accounting', 'audit', 'tax preparation', 'financial services',
@@ -1062,13 +1118,15 @@ class BillExtractor:
         # Shopping & Retail (prioritize specific brands and clothing terms - CHECK FIRST)
         clothing_brands = [
             'allen solly', 'aditya birla', 'lifestyle brands', 'raymond', 'arrow', 'van heusen',
-            'louis philippe', 'peter england', 'zara', 'h&m', 'uniqlo', 'levis', 'nike', 'adidas'
+            'louis philippe', 'peter england', 'zara', 'h&m', 'uniqlo', 'levis', 'nike', 'adidas',
+            'puma', 'reebok', 'woodland', 'bata', 'liberty', 'metro brands'
         ]
         
         clothing_items = [
             'shirt', 'trouser', 'trousers', 'pant', 'pants', 'duffel bag', 'bag', 'clothing',
             'apparel', 'wear', 'dress', 'skirt', 'jacket', 'blazer', 'suit', 'tie', 'belt',
-            'shoes', 'sandal', 'sneaker', 'formal', 'casual', 'sleeve', 'collar'
+            'shoes', 'sandal', 'sneaker', 'formal', 'casual', 'sleeve', 'collar', 'hanky',
+            'socks', 'ankle length', 'half sleeve', 'flat front'
         ]
         
         # Check for clothing brands first (highest priority)
