@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { UploadCloud, CheckCircle, AlertCircle, Calendar, Clock, FileText, Image } from "lucide-react";
+import { UploadCloud, CheckCircle, AlertCircle, Calendar, Clock, FileText, Image, Edit3, Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import { getCurrentLocalDate, formatDisplayDate } from '../utils/dateUtils';
 
@@ -10,7 +10,28 @@ export default function UploadCard() {
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
   const [fileType, setFileType] = useState(null);
+  const [manualEntry, setManualEntry] = useState(false);
+  const [manualData, setManualData] = useState({
+    vendor: '',
+    amount: '',
+    category: '',
+    date: getCurrentLocalDate(),
+    items: []
+  });
   const fileInput = useRef();
+
+  const categories = [
+    'Food & Dining',
+    'Shopping',
+    'Transportation',
+    'Bills & Utilities',
+    'Healthcare',
+    'Entertainment',
+    'Travel',
+    'Education',
+    'Groceries',
+    'Other'
+  ];
 
   const handleFile = async (file) => {
     if (!file) return;
@@ -82,13 +103,31 @@ export default function UploadCard() {
   };
 
   const handleAddToExpenses = async () => {
-    if (!extractedData) return;
+    const dataToSave = manualEntry ? manualData : extractedData;
+    if (!dataToSave) return;
+    
+    // Validate manual entry fields
+    if (manualEntry) {
+      if (!manualData.vendor.trim()) {
+        setError('Please enter vendor name');
+        return;
+      }
+      if (!manualData.amount || manualData.amount <= 0) {
+        setError('Please enter a valid amount');
+        return;
+      }
+      if (!manualData.category) {
+        setError('Please select a category');
+        return;
+      }
+    }
     
     try {
       setLoading(true);
+      setError("");
       
       // Create expense object with validated date
-      const rawDate = extractedData.date || extractedData.dates?.[0];
+      const rawDate = dataToSave.date || dataToSave.dates?.[0];
       let validDate = getCurrentLocalDate(); // Default to current date
       
       if (rawDate && rawDate !== 'Invalid Date' && rawDate !== '') {
@@ -105,12 +144,12 @@ export default function UploadCard() {
       }
       
       const expenseData = {
-        vendor: extractedData.vendor,
-        amount: extractedData.amount || extractedData.total_amount,
-        currency: extractedData.currency || 'INR',
-        category: extractedData.category,
+        vendor: dataToSave.vendor,
+        amount: parseFloat(dataToSave.amount) || dataToSave.total_amount,
+        currency: dataToSave.currency || 'INR',
+        category: dataToSave.category,
         date: validDate,
-        items: extractedData.items || []
+        items: dataToSave.items || []
       };
       
       // Send to backend
@@ -130,10 +169,20 @@ export default function UploadCard() {
         // Trigger refresh of expenses list and charts
         window.dispatchEvent(new CustomEvent('expenseAdded', { detail: result.expense }));
         
-        // Show success message
+        // Show success message and reset
         setTimeout(() => {
           setSaved(false);
           setExtractedData(null);
+          if (manualEntry) {
+            setManualData({
+              vendor: '',
+              amount: '',
+              category: '',
+              date: getCurrentLocalDate(),
+              items: []
+            });
+            setManualEntry(false);
+          }
         }, 2000);
       } else {
         throw new Error(result.error || 'Failed to save expense');
@@ -143,6 +192,21 @@ export default function UploadCard() {
       setError(`Failed to save expense: ${err.message}`);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleManualEntryToggle = () => {
+    setManualEntry(!manualEntry);
+    setExtractedData(null);
+    setError("");
+    if (!manualEntry) {
+      setManualData({
+        vendor: '',
+        amount: '',
+        category: '',
+        date: getCurrentLocalDate(),
+        items: []
+      });
     }
   };
 
@@ -176,27 +240,151 @@ export default function UploadCard() {
         </p>
       </div>
       
-      <div
-        className="border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center h-40 cursor-pointer hover:border-blue-400 transition"
-        onDrop={onDrop}
-        onDragOver={(e) => e.preventDefault()}
-        onClick={() => fileInput.current.click()}
-      >
-        <div className="flex items-center gap-3 mb-3">
-          <Image size={28} className="text-blue-400" />
-          <FileText size={28} className="text-red-400" />
-        </div>
-        <UploadCloud size={32} className="text-gray-400 mb-2" />
-        <span className="text-gray-600 font-medium">Upload Invoice or Receipt</span>
-        <span className="text-gray-500 text-sm">Support: Images (JPG, PNG) & PDF documents</span>
-        <input 
-          type="file" 
-          ref={fileInput} 
-          className="hidden" 
-          accept="image/*,application/pdf"
-          onChange={e => handleFile(e.target.files[0])} 
-        />
+      {/* Manual Entry Toggle */}
+      <div className="flex justify-center mb-4">
+        <button
+          onClick={handleManualEntryToggle}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
+            manualEntry 
+              ? 'bg-orange-100 text-orange-700 border border-orange-200' 
+              : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
+          }`}
+        >
+          {manualEntry ? (
+            <>
+              <UploadCloud size={16} />
+              Switch to File Upload
+            </>
+          ) : (
+            <>
+              <Edit3 size={16} />
+              Manual Entry
+            </>
+          )}
+        </button>
       </div>
+
+      {/* Manual Entry Form */}
+      {manualEntry && (
+        <div className="space-y-4 p-4 bg-orange-50 rounded-lg border border-orange-200">
+          <div className="flex items-center gap-2 text-orange-700 mb-4">
+            <Plus size={16} />
+            <span className="font-semibold">Add Expense Manually</span>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Vendor Input */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Vendor Name *
+              </label>
+              <input
+                type="text"
+                value={manualData.vendor}
+                onChange={(e) => setManualData(prev => ({...prev, vendor: e.target.value}))}
+                placeholder="Enter vendor/store name"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            
+            {/* Amount Input */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Amount (₹) *
+              </label>
+              <input
+                type="number"
+                value={manualData.amount}
+                onChange={(e) => setManualData(prev => ({...prev, amount: e.target.value}))}
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            
+            {/* Category Dropdown */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Category *
+              </label>
+              <select
+                value={manualData.category}
+                onChange={(e) => setManualData(prev => ({...prev, category: e.target.value}))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select category</option>
+                {categories.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+            
+            {/* Date Input */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Date
+              </label>
+              <input
+                type="date"
+                value={manualData.date}
+                onChange={(e) => setManualData(prev => ({...prev, date: e.target.value}))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+          
+          {/* Add Button for Manual Entry */}
+          <button 
+            onClick={handleAddToExpenses}
+            disabled={loading || saved || !manualData.vendor.trim() || !manualData.amount || !manualData.category}
+            className={`w-full py-2 px-4 rounded transition ${
+              saved 
+                ? 'bg-green-600 text-white' 
+                : 'bg-orange-600 text-white hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed'
+            }`}
+          >
+            {loading ? (
+              <div className="flex items-center justify-center gap-2">
+                <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
+                Saving...
+              </div>
+            ) : saved ? (
+              <div className="flex items-center justify-center gap-2">
+                <CheckCircle size={16} />
+                Added Successfully!
+              </div>
+            ) : (
+              'Add Manual Expense'
+            )}
+          </button>
+        </div>
+      )}
+      
+      {/* File Upload Area */}
+      {!manualEntry && (
+        <div
+          className="border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center h-40 cursor-pointer hover:border-blue-400 transition"
+          onDrop={onDrop}
+          onDragOver={(e) => e.preventDefault()}
+          onClick={() => fileInput.current.click()}
+        >
+          <div className="flex items-center gap-3 mb-3">
+            <Image size={28} className="text-blue-400" />
+            <FileText size={28} className="text-red-400" />
+          </div>
+          <UploadCloud size={32} className="text-gray-400 mb-2" />
+          <span className="text-gray-600 font-medium">Upload Invoice or Receipt</span>
+          <span className="text-gray-500 text-sm">Support: Images (JPG, PNG) & PDF documents</span>
+          <input 
+            type="file" 
+            ref={fileInput} 
+            className="hidden" 
+            accept="image/*,application/pdf"
+            onChange={e => handleFile(e.target.files[0])} 
+          />
+        </div>
+      )}
       
       {/* Status Messages */}
       {loading && (
@@ -224,14 +412,14 @@ export default function UploadCard() {
           <div>
             <span className="font-semibold">Expense saved successfully!</span>
             <p className="text-sm text-green-700">
-              ₹{extractedData.total_amount?.toFixed(2)} expense from {extractedData.vendor} has been added to your records.
+              ₹{(manualEntry ? parseFloat(manualData.amount) : (extractedData?.total_amount || extractedData?.amount))?.toFixed(2)} expense from {manualEntry ? manualData.vendor : extractedData?.vendor} has been added to your records.
             </p>
           </div>
         </div>
       )}
       
       {/* Extracted Data Display */}
-      {extractedData && (
+      {extractedData && !manualEntry && (
         <div className="space-y-4">
           <div className="flex items-center gap-2 text-green-600">
             <CheckCircle size={16} />
@@ -336,7 +524,7 @@ export default function UploadCard() {
       )}
       
       {/* OCR Preview for debugging */}
-      {extractedData && (
+      {extractedData && !manualEntry && (
         <details className="mt-4">
           <summary className="cursor-pointer text-sm text-gray-600 hover:text-gray-800">
             View Raw OCR Text
