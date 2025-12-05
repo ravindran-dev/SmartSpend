@@ -1,35 +1,33 @@
-# 📊 Smart Expense Tracker with ML-Powered Bill Extraction  
+#  Smart Expense Tracker with ML-Powered Bill Extraction  
 
-## 🚀 Project Overview  
+##  Project Overview  
 This project is an **intelligent expense tracking system** that revolutionizes financial management through **Machine Learning and OCR technology**. Users can simply upload bill/receipt images, and the system automatically extracts all relevant information including amounts, vendors, dates, and line items, then intelligently categorizes expenses using a trained ML model.
 
 The system provides a **comprehensive dashboard with insights, charts, and analytics** to help individuals and businesses make data-driven financial decisions.
 
----
+##  Key Features  
 
-## ✨ Key Features  
-
-### 🤖 **ML-Powered Bill Extraction**
+### **ML-Powered Bill Extraction**
 - **Advanced OCR Processing** – Extract text from any bill/receipt format
 - **Smart Data Extraction** – Automatically identify amounts, vendors, dates, items
 - **Intelligent Categorization** – ML model categorizes expenses with high accuracy
 - **Multi-format Support** – Works with PNG, JPEG, TIFF, and other image formats
 
-### 📊 **Intelligent Analytics**
+### **Intelligent Analytics**
 - **Interactive Dashboard** – Real-time spending visualizations
 - **Predictive Insights** – ML-driven spending pattern analysis  
 - **Budget Tracking** – Smart alerts and recommendations
 - **Custom Reports** – Export detailed reports in PDF/CSV formats
 
-### 🔧 **Advanced Technology**
+###  **Advanced Technology**
 - **Real-time Processing** – Instant bill analysis and categorization
 - **High Accuracy OCR** – Optimized image preprocessing for better text extraction
 - **Scalable Architecture** – Handles multiple bill uploads efficiently
 - **Error Handling** – Robust validation and fallback mechanisms
 
----
 
-## 🛠️ Tech Stack  
+
+##  Tech Stack  
 
 ### **Frontend**
 - React.js 18 with modern hooks
@@ -51,9 +49,9 @@ The system provides a **comprehensive dashboard with insights, charts, and analy
 - **Classification**: Logistic Regression with hybrid features
 - **Model Persistence**: Joblib for model serialization
 
----
 
-## 📂 Project Structure  
+
+##  Project Structure  
 ```yaml
 SmartSpend/
 ├── frontend/                 # React application
@@ -83,46 +81,43 @@ SmartSpend/
 └── requirements.txt        # Project dependencies
 ```
 
----
 
-## ⚙️ Quick Setup  
+##  Quick Setup  
 
-### 🚀 **Automated Setup (Windows)**
+###  **Automated Setup (Windows)**
 ```bash
 # Run the setup script
 setup.bat
 ```
 
-### 📋 **Manual Setup**
+###  **Manual Setup**
 
-#### 1️⃣ **Install Tesseract OCR**
+#### 1️ **Install Tesseract OCR**
 - **Windows**: Download from [Tesseract GitHub](https://github.com/UB-Mannheim/tesseract/wiki)
 - **macOS**: `brew install tesseract`
 - **Linux**: `sudo apt-get install tesseract-ocr`
 
-#### 2️⃣ **Backend Setup**
+#### 2️ **Backend Setup**
 ```bash
 cd backend
 pip install -r requirements.txt
 python app.py  # Starts on http://localhost:5000
 ```
 
-#### 3️⃣ **Frontend Setup**
+#### 3️ **Frontend Setup**
 ```bash
 cd frontend
 npm install
 npm start  # Starts on http://localhost:5173
 ```
 
-#### 4️⃣ **Test the System**
+#### 4️ **Test the System**
 ```bash
 cd backend
 python test_extraction.py
 ```
 
----
-
-## 🎯 **How It Works**
+##  **How It Works**
 
 ### 1. **Upload Bill Image**
 - Drag & drop or click to upload bill/receipt
@@ -147,9 +142,9 @@ Data Parsing → ML Categorization → Results Display
 - Make manual corrections if needed
 - Add to expense database with one click
 
----
 
-## 🔬 **ML Model Details**
+
+##  **ML Model Details**
 
 ### **Training Features**
 - **Text Features**: TF-IDF vectors from bill descriptions
@@ -167,9 +162,9 @@ Data Parsing → ML Categorization → Results Display
 - User corrections improve future predictions
 - Regular model updates for better accuracy
 
----
 
-## � **API Documentation**
+
+##  **API Documentation**
 
 ### **Endpoints**
 - `POST /api/process-bill` - Upload and process bill images
@@ -189,9 +184,9 @@ Data Parsing → ML Categorization → Results Display
 }
 ```
 
----
 
-## 🚀 **Advanced Features**
+
+##  **Advanced Features**
 
 ### **Image Preprocessing**
 - Gaussian blur for noise reduction
@@ -210,7 +205,7 @@ Data Parsing → ML Categorization → Results Display
 
 ---
 
-## 🤝 **Contributing**
+##  **Contributing**
 
 1. Fork the repository
 2. Create feature branch (`git checkout -b feature/amazing-feature`)
@@ -220,79 +215,16 @@ Data Parsing → ML Categorization → Results Display
 
 ---
 
-## 📄 **License**
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 👨‍💻 **Contributors**
-- **Ravindran** – ML Engineering & Backend Development
-- **Thulasiram K** – Frontend Development & UI/UX
 
----
+##  Installation & Setup  
 
-## 🆘 **Support**
-For setup issues, check [ML_SETUP.md](ML_SETUP.md) or create an issue on GitHub.
-│ ├── models/ # Database models
-│ │ └── user.py
-│ │ └── expense.py
-│ │
-│ ├── routes/ # API routes
-│ │ └── auth_routes.py
-│ │ └── expense_routes.py
-│ │
-│ ├── services/ # Business logic
-│ │ └── ocr_service.py
-│ │ └── ml_service.py
-│ │
-│ ├── utils/ # Helper functions
-│ │ └── pdf_exporter.py
-│ │ └── csv_exporter.py
-│ │
-│ ├── ml_models/ # Trained ML models
-│ │ └── expense_model.pkl
-│ │
-│ └── logs/ # Logs for debugging
-│ └── app.log
-│
-│── frontend/ # React frontend
-│ │── public/ # Static files
-│ │ └── index.html
-│ │
-│ ├── src/ # Source code
-│ │ ├── components/ # Reusable components
-│ │ │ └── Navbar.js
-│ │ │ └── Dashboard.js
-│ │ │ └── UploadForm.js
-│ │ │
-│ │ ├── pages/ # Page-level components
-│ │ │ └── Home.js
-│ │ │ └── Reports.js
-│ │ │ └── Login.js
-│ │ │
-│ │ ├── services/ # API calls to backend
-│ │ │ └── api.js
-│ │ │
-│ │ ├── styles/ # CSS / Tailwind configs
-│ │ │ └── App.css
-│ │ │
-│ │ └── App.js # Main React component
-│ │ └── index.js # React entry point
-│ │
-│ ├── package.json # Node dependencies
-│ └── tailwind.config.js # Tailwind configuration
-│
-│── README.md # Project documentation
-│── .gitignore # Ignore files
-```
----
-
-## ⚙️ Installation & Setup  
-
-### 1️⃣ Clone the Repository  
+### 1️ Clone the Repository  
 ```bash
 git clone https://github.com/your-username/expense-tracker-ocr-ml.git
 cd expense-tracker-ocr-ml
 ```
-### 2️⃣ Backend Setup
+### 2️ Backend Setup
 ```bash
 
 cd backend
@@ -302,33 +234,33 @@ venv\Scripts\activate      # (Windows)
 pip install -r requirements.txt
 python app.py
 ```
-Backend will start at 👉 http://localhost:5000/
+Backend will start at  http://localhost:5000/
 
-### 3️⃣ Frontend Setup
+### 3️ Frontend Setup
 ```bash
 
 cd frontend
 npm install
 npm start
 ```
-Frontend will start at 👉 http://localhost:3000/
+Frontend will start at  http://localhost:3000/
 
 
 
-## 🤝 Contribution Guidelines
-- Fork this repo 🍴
+##  Contribution Guidelines
+- Fork this repo 
 
-- Create a new branch (feature-new) 🌱
+- Create a new branch (feature-new) 
 
-- Commit changes (git commit -m "Add new feature") 💡
-- Push to branch (git push origin feature-new) 🚀
+- Commit changes (git commit -m "Add new feature") 
+- Push to branch (git push origin feature-new) 
 
-- Create a Pull Request 🔥
+- Create a Pull Request 
 
-## 📜 License
+##  License
 This project is licensed under the MIT License – free to use and modify.
 
-## 👨‍💻 Team / Contributors
+##  Team / Contributors
 - Ravindran S – ML & Backend
 
 - Thulasiram K – Frontend & UI
