@@ -261,7 +261,7 @@ Frontend will start at  http://localhost:3000/
 This project is licensed under the MIT License – free to use and modify.
 
 ##  Team / Contributors
+- Thulasiram K – Frontend & UI (Team Lead)
 - Ravindran S – ML & Backend
 
-- Thulasiram K – Frontend & UI
 
